@@ -6,61 +6,72 @@
     <title>Historial de Portes | Luis</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #0f1014; color: white; padding: 20px; }
+        body { font-family: sans-serif; background: #0f1014; color: white; padding: 20px; }
         .porte-card { background: #1c1d24; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #3b82f6; position: relative; }
-        .cliente { font-weight: bold; font-size: 1.1rem; color: #3b82f6; margin-bottom: 5px; }
-        .info { font-size: 0.9rem; color: #ccc; margin: 3px 0; }
-        .precio { position: absolute; top: 15px; right: 15px; font-weight: bold; color: #10b981; font-size: 1.1rem; }
-        .badge { background: #333; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; text-transform: uppercase; display: inline-block; margin-top: 8px; }
-        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .cliente { font-weight: bold; font-size: 1.1rem; color: #3b82f6; }
+        .precio { position: absolute; top: 15px; right: 15px; color: #10b981; font-weight: bold; }
+        button.logout { background: #333; color: #ff4d4d; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
     </style>
 </head>
 <body>
+    <button class="logout" onclick="logout()">Cerrar Sesión</button>
+    <h2>📋 Historial de Portes</h2>
+    <div id="lista-portes">Conectando con la nube...</div>
+
     <script>
-        // --- SEGURIDAD DE MERCADO (PIN) ---
-        const PIN_CORRECTO = "7373"; 
-        if (localStorage.getItem('auth_luis') !== 'true') {
-            let pass = prompt("Introduce el PIN de acceso:");
-            if (pass === PIN_CORRECTO) {
-                localStorage.setItem('auth_luis', 'true');
-            } else {
-                alert("PIN incorrecto");
-                window.location.href = "https://lrinstal73-stack.github.io/control/";
+        // 1. SEGURIDAD PIN
+        function checkAuth() {
+            const PIN_CORRECTO = "7373";
+            if (localStorage.getItem('auth_luis') !== 'true') {
+                let pass = prompt("PIN de seguridad:");
+                if (pass === PIN_CORRECTO) {
+                    localStorage.setItem('auth_luis', 'true');
+                } else {
+                    alert("PIN Incorrecto");
+                    window.location.href = "https://lrinstal73-stack.github.io/control/";
+                }
             }
         }
-    </script>
+        function logout() { localStorage.removeItem('auth_luis'); location.reload(); }
+        checkAuth();
 
-    <h2>📋 Historial de Portes</h2>
-    <div id="lista-portes">Cargando servicios de la nube...</div>
+        // 2. CONEXIÓN (Datos extraídos de tus capturas)
+        const SB_URL = "https://hkrbyjxspermnedciqrr.supabase.co";
+        const SB_KEY = "sb_publishable_RlGUguqx-gYQqIyR0W2AwQ_qgRchMDRiM2M5MGYtYjM0Zi00ZDEzLWEyMzYtZDE4YzgyYjA0MzI3";
+        
+        async function cargarDatos() {
+            try {
+                const _supabase = supabase.createClient(SB_URL, SB_KEY);
+                const { data, error } = await _supabase
+                    .from('portes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-    <script>
-        const _supabase = supabase.createClient(
-            "https://hkrbyjxspermnedciqrr.supabase.co", 
-            "sb_publishable_RlGUguqx-gYQqIyR0W2AwQ_qgRchMDRiM2M5MGYtYjM0Zi00ZDEzLWEyMzYtZDE4YzgyYjA0MzI3"
-        );
+                if (error) throw error;
 
-        async function cargarPortes() {
-            const { data, error } = await _supabase
-                .from('portes')
-                .select('*')
-                .order('created_at', { ascending: false });
+                const contenedor = document.getElementById('lista-portes');
+                if (!data || data.length === 0) {
+                    contenedor.innerHTML = "No hay portes registrados. ¡Registra uno nuevo para probar!";
+                    return;
+                }
 
-            const div = document.getElementById('lista-portes');
-            if (error) { div.innerHTML = "Error al conectar con la base de datos."; return; }
-            if (data.length === 0) { div.innerHTML = "No hay portes registrados aún."; return; }
+                contenedor.innerHTML = data.map(p => `
+                    <div class="porte-card">
+                        <div class="precio">${p.precio || 0}€</div>
+                        <div class="cliente">${p.cliente}</div>
+                        <div style="font-size:0.8rem; color:#888; margin-top:5px;">
+                            📍 ${p.origen || 'S/O'} ➡ ${p.destino || 'S/D'}
+                        </div>
+                    </div>
+                `).join('');
 
-            div.innerHTML = data.map(p => `
-                <div class="porte-card">
-                    <div class="precio">${p.precio ? p.precio + '€' : '-'}</div>
-                    <div class="cliente">${p.cliente}</div>
-                    <div class="info">📍 <b>De:</b> ${p.origen || 'No indicado'}</div>
-                    <div class="info">🏁 <b>A:</b> ${p.destino || 'No indicado'}</div>
-                    <div class="info">📝 ${p.notas || ''}</div>
-                    <span class="badge">${p.estado}</span>
-                </div>
-            `).join('');
+            } catch (err) {
+                document.getElementById('lista-portes').innerHTML = "Error: " + err.message;
+            }
         }
-        cargarPortes();
+
+        // Retraso de 1 segundo para asegurar la carga de la librería
+        setTimeout(cargarDatos, 1000);
     </script>
 </body>
 </html>
