@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Portes | Luis</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #0f1014; color: white; padding: 20px; }
+        .porte-card { background: #1c1d24; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #3b82f6; position: relative; }
+        .cliente { font-weight: bold; font-size: 1.1rem; color: #3b82f6; margin-bottom: 5px; }
+        .info { font-size: 0.9rem; color: #ccc; margin: 3px 0; }
+        .precio { position: absolute; top: 15px; right: 15px; font-weight: bold; color: #10b981; font-size: 1.1rem; }
+        .badge { background: #333; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; text-transform: uppercase; display: inline-block; margin-top: 8px; }
+        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <script>
+        // --- SEGURIDAD DE MERCADO (PIN) ---
+        const PIN_CORRECTO = "7373"; 
+        if (localStorage.getItem('auth_luis') !== 'true') {
+            let pass = prompt("Introduce el PIN de acceso:");
+            if (pass === PIN_CORRECTO) {
+                localStorage.setItem('auth_luis', 'true');
+            } else {
+                alert("PIN incorrecto");
+                window.location.href = "https://lrinstal73-stack.github.io/control/";
+            }
+        }
+    </script>
+
+    <h2>📋 Historial de Portes</h2>
+    <div id="lista-portes">Cargando servicios de la nube...</div>
+
+    <script>
+        const _supabase = supabase.createClient(
+            "https://hkrbyjxspermnedciqrr.supabase.co", 
+            "sb_publishable_RlGUguqx-gYQqIyR0W2AwQ_qgRchMDRiM2M5MGYtYjM0Zi00ZDEzLWEyMzYtZDE4YzgyYjA0MzI3"
+        );
+
+        async function cargarPortes() {
+            const { data, error } = await _supabase
+                .from('portes')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const div = document.getElementById('lista-portes');
+            if (error) { div.innerHTML = "Error al conectar con la base de datos."; return; }
+            if (data.length === 0) { div.innerHTML = "No hay portes registrados aún."; return; }
+
+            div.innerHTML = data.map(p => `
+                <div class="porte-card">
+                    <div class="precio">${p.precio ? p.precio + '€' : '-'}</div>
+                    <div class="cliente">${p.cliente}</div>
+                    <div class="info">📍 <b>De:</b> ${p.origen || 'No indicado'}</div>
+                    <div class="info">🏁 <b>A:</b> ${p.destino || 'No indicado'}</div>
+                    <div class="info">📝 ${p.notas || ''}</div>
+                    <span class="badge">${p.estado}</span>
+                </div>
+            `).join('');
+        }
+        cargarPortes();
+    </script>
+</body>
+</html>
