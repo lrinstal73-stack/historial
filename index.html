@@ -38,7 +38,7 @@
         function logout() { localStorage.removeItem('auth_luis'); location.reload(); }
         checkAuth();
 
-        // 2. CONEXIÓN (Claves verificadas)
+        // 2. CONEXIÓN (Claves revisadas)
         const SB_URL = "https://hkrbyjxspermnedciqrr.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrcmJ5anhzcGVybW5lZGNpcXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMzI1MTMsImV4cCI6MjA1ODYwODUxM30.RlGUguqx-gYQqIyR0W2AwQ_qgRchMDRiM2M5MGYtYjM0Zi00ZDEzLWEyMzYtZDE4YzgyYjA0MzI3";
         
@@ -60,7 +60,7 @@
                     return;
                 }
 
-                // Calcular Total Facturado
+                // Cálculo de ingresos totales
                 const totalFacturado = data.reduce((acc, p) => acc + (Number(p.precio) || 0), 0);
                 totalContenedor.innerHTML = `
                     <div class="resumen-total">
@@ -69,7 +69,6 @@
                     </div>
                 `;
 
-                // Pintar tarjetas
                 contenedor.innerHTML = data.map(p => `
                     <div class="porte-card">
                         <div class="precio">${p.precio || 0}€</div>
@@ -83,7 +82,6 @@
             }
         }
 
-        // Ejecutar carga tras 1 segundo
         setTimeout(cargarDatos, 1000);
     </script>
 </body>
