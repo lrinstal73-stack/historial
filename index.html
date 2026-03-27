@@ -7,14 +7,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; background: #0f1014; color: white; padding: 20px; }
+        .resumen-total { background: #10b981; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #059669; }
         .porte-card { background: #1c1d24; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #3b82f6; position: relative; }
         .cliente { font-weight: bold; font-size: 1.1rem; color: #3b82f6; }
-        .precio { position: absolute; top: 15px; right: 15px; color: #10b981; font-weight: bold; }
-        button.logout { background: #333; color: #ff4d4d; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
+        .precio { position: absolute; top: 15px; right: 15px; color: #10b981; font-weight: bold; font-size: 1.2rem; }
+        .info { font-size: 0.9rem; color: #ccc; margin-top: 5px; }
+        button.logout { background: #333; color: #ff4d4d; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
     <button class="logout" onclick="logout()">Cerrar Sesión</button>
+    <div id="total-container"></div>
     <h2>📋 Historial de Portes</h2>
     <div id="lista-portes">Conectando con la nube...</div>
 
@@ -23,7 +26,7 @@
         function checkAuth() {
             const PIN_CORRECTO = "7373";
             if (localStorage.getItem('auth_luis') !== 'true') {
-                let pass = prompt("PIN de seguridad:");
+                let pass = prompt("Introduce el PIN de acceso:");
                 if (pass === PIN_CORRECTO) {
                     localStorage.setItem('auth_luis', 'true');
                 } else {
@@ -35,9 +38,9 @@
         function logout() { localStorage.removeItem('auth_luis'); location.reload(); }
         checkAuth();
 
-        // 2. CONEXIÓN (Datos extraídos de tus capturas)
+        // 2. CONEXIÓN (Claves verificadas)
         const SB_URL = "https://hkrbyjxspermnedciqrr.supabase.co";
-        const SB_KEY = "sb_publishable_RlGUguqx-gYQqIyR0W2AwQ_qgRchMDRiM2M5MGYtYjM0Zi00ZDEzLWEyMzYtZDE4YzgyYjA0MzI3";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrcmJ5anhzcGVybW5lZGNpcXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMzI1MTMsImV4cCI6MjA1ODYwODUxM30.RlGUguqx-gYQqIyR0W2AwQ_qgRchMDRiM2M5MGYtYjM0Zi00ZDEzLWEyMzYtZDE4YzgyYjA0MzI3";
         
         async function cargarDatos() {
             try {
@@ -50,18 +53,28 @@
                 if (error) throw error;
 
                 const contenedor = document.getElementById('lista-portes');
+                const totalContenedor = document.getElementById('total-container');
+
                 if (!data || data.length === 0) {
-                    contenedor.innerHTML = "No hay portes registrados. ¡Registra uno nuevo para probar!";
+                    contenedor.innerHTML = "No hay portes registrados todavía.";
                     return;
                 }
 
+                // Calcular Total Facturado
+                const totalFacturado = data.reduce((acc, p) => acc + (Number(p.precio) || 0), 0);
+                totalContenedor.innerHTML = `
+                    <div class="resumen-total">
+                        <small>TOTAL FACTURADO</small>
+                        <div style="font-size: 2rem; font-weight: bold;">${totalFacturado}€</div>
+                    </div>
+                `;
+
+                // Pintar tarjetas
                 contenedor.innerHTML = data.map(p => `
                     <div class="porte-card">
                         <div class="precio">${p.precio || 0}€</div>
-                        <div class="cliente">${p.cliente}</div>
-                        <div style="font-size:0.8rem; color:#888; margin-top:5px;">
-                            📍 ${p.origen || 'S/O'} ➡ ${p.destino || 'S/D'}
-                        </div>
+                        <div class="cliente">${p.cliente || 'Sin nombre'}</div>
+                        <div class="info">📍 ${p.origen || '-'} ➡ ${p.destino || '-'}</div>
                     </div>
                 `).join('');
 
@@ -70,7 +83,7 @@
             }
         }
 
-        // Retraso de 1 segundo para asegurar la carga de la librería
+        // Ejecutar carga tras 1 segundo
         setTimeout(cargarDatos, 1000);
     </script>
 </body>
